@@ -1,0 +1,103 @@
+name: Flutter CI (APK & Web Pages)
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - '[0-9]*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  FLUTTER_CHANNEL: stable
+
+jobs:
+  # =========================
+  # Build & Release Android
+  # =========================
+  android-apk:
+    name: Build APK & Publish
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version from tag
+        id: ver
+        run: |
+          RAW="${GITHUB_REF_NAME}"
+          VER="$(printf "%s" "$RAW" | sed -E 's/^[vV]//')"
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "build_number=${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $VER (build ${GITHUB_RUN_NUMBER})"
+      - name: Setup Flutter (${{ env.FLUTTER_CHANNEL }})
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: Flutter Pub Get
+        run: flutter pub get
+
+      # Jika butuh signing, tambahkan step keystore di sini.
+
+      - name: Build APK (release) with version from tag
+        run: |
+          flutter build apk --release \
+            --build-name "${{ steps.ver.outputs.version }}" \
+            --build-number "${{ steps.ver.outputs.build_number }}"
+      - name: Rename APK to include version
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk \
+             "dist/app-release-${{ steps.ver.outputs.version }}.apk"
+      - name: Create GitHub Release & Upload APK
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/app-release-${{ steps.ver.outputs.version }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+  # =========================
+  # Build & Deploy Web (Pages)
+  # =========================
+  web-pages:
+    name: Build Web & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter (${{ env.FLUTTER_CHANNEL }})
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: Flutter Pub Get
+        run: flutter pub get
+
+      - name: Build Flutter Web
+        run: |
+          flutter build web --release --wasm --base-href "/${{ github.event.repository.name }}/"
+      
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
