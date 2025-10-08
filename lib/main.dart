@@ -166,7 +166,49 @@ class _HomePageState extends State<HomePage> {
               value2: _weatherData!.current.windDirection.toString(),
               unit: 'm/s', unit2: '°',),
             const SizedBox(height: 20),
-            WeatherDetailsGrid(current: _weatherData!.current, daily: _weatherData!.daily),
+            Row(
+              children: [
+                Expanded(
+                  child: DetailCard(
+                    icon: Icons.wb_sunny_outlined,
+                    title: 'UV Index',
+                    value: _weatherData!.current.uvIndex.toString(),
+                    label: WeatherUtils.getUvIndexString(_weatherData!.current.uvIndex),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: DetailCard(
+                    icon: Icons.water_drop_outlined,
+                    title: 'Humidity',
+                    value: '${_weatherData!.current.humidity}',
+                    label: WeatherUtils.getHumidityString(_weatherData!.current.humidity),
+                  ),
+                )
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: DetailCard(
+                    icon: WeatherIcons.barometer,
+                    title: 'Pressure',
+                    value: '${_weatherData!.current.surfacePressure.round()}',
+                    label: 'hPa',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: DetailCard(
+                      icon: WeatherIcons.rain,
+                      title: 'Precipitation',
+                      value: '${_weatherData!.current.precipitation.round()}',
+                      label: 'mm',
+                  ),
+                )
+              ],
+            ),
             const SizedBox(height: 20),
             WeatherDetailsRow(icon: WeatherIcons.horizon_alt, title: 'Sunrise', title2: 'Sunset', 
               value: _weatherData!.current.sunrise,
@@ -382,50 +424,6 @@ class WeatherDetailsRow extends StatelessWidget {
     }
 }
 
-class WeatherDetailsGrid extends StatelessWidget {
-    final CurrentWeather current;
-    final DailyData daily;
-    const WeatherDetailsGrid({super.key, required this.current, required this.daily});
-
-    @override
-    Widget build(BuildContext context) {
-        return GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.5,
-            children: [
-                DetailCard(
-                    icon: Icons.wb_sunny_outlined,
-                    title: 'UV Index',
-                    value: current.uvIndex.toString(),
-                    label: WeatherUtils.getUvIndexString(current.uvIndex),
-                ),
-                DetailCard(
-                    icon: Icons.water_drop_outlined,
-                    title: 'Humidity',
-                    value: '${current.humidity}',
-                    label: WeatherUtils.getHumidityString(current.humidity),
-                ),
-                DetailCard(
-                    icon: WeatherIcons.barometer,
-                    title: 'Pressure',
-                    value: '${current.surfacePressure.round()}',
-                    label: 'hPa',
-                ),
-                DetailCard(
-                    icon: WeatherIcons.rain,
-                    title: 'Precipitation',
-                    value: '${current.precipitation.round()}',
-                    label: 'mm',
-                )
-            ],
-        );
-    }
-}
-
 class DetailCard extends StatelessWidget {
     final IconData icon;
     final String title;
@@ -455,24 +453,21 @@ class DetailCard extends StatelessWidget {
                         ],
                     ),
                     const SizedBox(height: 10),
-                    Text(value, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                    Text(value, style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold)),
                     if (label != null)
                         const SizedBox(height: 10),
                         Text(label!, style: const TextStyle(color: Colors.white, fontSize: 16)),
                     if (title == 'UV Index' || title == 'Humidity')
-                        Expanded(
-                          child: LinearProgressIndicator(
-                            value: title == 'UV Index'
-                                ? double.parse(value) / 11
-                                : double.parse(value) / 100,
-
-                            color: title == 'UV Index'
-                                ? Colors.orangeAccent
-                                : Colors.lightBlueAccent,
-                            backgroundColor: Colors.grey[300],
-                            minHeight: 10,
-                            borderRadius: BorderRadius.circular(5), // Makes the corners rounded
-                          ),
+                        LinearProgressIndicator(
+                          value: title == 'UV Index'
+                              ? double.parse(value) / 11
+                              : double.parse(value) / 100,
+                          color: title == 'UV Index'
+                              ? Colors.orangeAccent
+                              : Colors.lightBlueAccent,
+                          backgroundColor: Colors.grey[300],
+                          minHeight: 10,
+                          borderRadius: BorderRadius.circular(5), // Makes the corners rounded
                         ),
                 ],
             ),
