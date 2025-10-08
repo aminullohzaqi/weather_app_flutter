@@ -62,7 +62,6 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchWeatherData() async {
     setState(() {
-      _isLoading = true;
       _errorMessage = null;
     });
 
